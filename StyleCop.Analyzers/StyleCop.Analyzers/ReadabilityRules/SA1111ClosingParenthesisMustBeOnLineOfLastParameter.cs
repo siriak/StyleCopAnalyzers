@@ -71,6 +71,7 @@ namespace StyleCop.Analyzers.ReadabilityRules
         private static readonly Action<SyntaxNodeAnalysisContext> AnonymousMethodExpressionAction = HandleAnonymousMethodExpression;
         private static readonly Action<SyntaxNodeAnalysisContext> ParenthesizedLambdaExpressionAction = HandleParenthesizedLambdaExpression;
         private static readonly Action<SyntaxNodeAnalysisContext> ArrayCreationExpressionAction = HandleArrayCreationExpression;
+        private static readonly Action<SyntaxNodeAnalysisContext> ClassOrStructDeclarationExpressionAction = HandleClassOrStructDeclarationExpression;
 
         /// <inheritdoc/>
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
@@ -93,6 +94,7 @@ namespace StyleCop.Analyzers.ReadabilityRules
             context.RegisterSyntaxNodeAction(AnonymousMethodExpressionAction, SyntaxKind.AnonymousMethodExpression);
             context.RegisterSyntaxNodeAction(ParenthesizedLambdaExpressionAction, SyntaxKind.ParenthesizedLambdaExpression);
             context.RegisterSyntaxNodeAction(ArrayCreationExpressionAction, SyntaxKind.ArrayCreationExpression);
+            context.RegisterSyntaxNodeAction(ClassOrStructDeclarationExpressionAction, SyntaxKind.ClassDeclaration, SyntaxKind.StructDeclaration);
         }
 
         private static void HandleArrayCreationExpression(SyntaxNodeAnalysisContext context)
@@ -354,6 +356,29 @@ namespace StyleCop.Analyzers.ReadabilityRules
             if (!localFunctionStatementSyntax.ParameterList.CloseParenToken.IsMissing)
             {
                 CheckIfLocationOfLastArgumentOrParameterAndCloseTokenAreTheSame(context, lastParameter, localFunctionStatementSyntax.ParameterList.CloseParenToken);
+            }
+        }
+
+        private static void HandleClassOrStructDeclarationExpression(SyntaxNodeAnalysisContext context)
+        {
+            var typeDeclaration = (TypeDeclarationSyntax)context.Node;
+
+            var parameters = typeDeclaration.ParameterList()?.Parameters;
+            if (parameters == null ||
+                !parameters.Value.Any())
+            {
+                return;
+            }
+
+            var lastParameter = parameters.Value.Last();
+
+            if (!typeDeclaration.ParameterList()!.CloseParenToken.IsMissing &&
+                !lastParameter.IsMissing)
+            {
+                CheckIfLocationOfLastArgumentOrParameterAndCloseTokenAreTheSame(
+                    context,
+                    lastParameter,
+                    typeDeclaration.ParameterList()!.CloseParenToken);
             }
         }
 
